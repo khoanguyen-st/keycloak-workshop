@@ -12,29 +12,16 @@ namespace Api.Controllers
 	public class IdentityController : ControllerBase
 	{
 		[HttpGet]
-		[Authorize(Policy = "Author")]
 		public IActionResult Get()
 		{
-			foreach(var claim in User.Claims)
+			var permissions = User.Claims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+
+            Console.WriteLine(JsonConvert.SerializeObject(permissions, new JsonSerializerSettings()
 			{
-				if(claim.Type == "resource_access")
-				{
-                    var rsAccess = JsonConvert.DeserializeObject<JObject>(claim.Value);
+				ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+			}));
 
-					var roleList = rsAccess.SelectToken("my-app.roles").ToList();
-
-					var strList = new List<string>();
-
-					foreach (var item in roleList)
-					{
-						strList.Add(item.ToString());
-					}
-
-					Console.WriteLine(JsonConvert.SerializeObject(strList));
-                }
-			}
-
-			return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
+            return new JsonResult(from c in User.Claims select new { c.Type, c.Value });
 		}
 	}
 }

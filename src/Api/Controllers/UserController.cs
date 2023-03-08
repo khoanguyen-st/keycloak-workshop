@@ -1,7 +1,9 @@
 ﻿using Api.Context;
 using Api.DTOs;
+using Api.Policy.PermissionPolicy;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
@@ -45,6 +47,7 @@ namespace Api.Controllers
 
 		//Get user keycloak by id
 		[HttpGet("{id}")]
+		[Authorize(Policy = "ViewProfile")]
 		public async Task<IActionResult> GetUserById(string id)
 		{
 			var token = HttpContext.GetTokenAsync("access_token").Result;
@@ -62,6 +65,7 @@ namespace Api.Controllers
 		}
 
 		[HttpPost]
+		[PermissionAuthorize("create-user")]
 		public async Task<IActionResult> Create(AddUserDTO addUserDTO)
 		{
 			try

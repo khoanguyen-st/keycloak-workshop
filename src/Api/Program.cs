@@ -1,5 +1,8 @@
 using Api.Context;
 using Api.Policy;
+using Api.Policy.PermissionPolicy;
+using Api.Policy.ResourcePolicy;
+using Api.Policy.RolePolicy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
@@ -65,10 +68,35 @@ builder.Services.AddAuthentication("Bearer")
 	});
 
 builder.Services.AddSingleton<IAuthorizationHandler, RoleHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, PostResourceHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizeHandler>();
+
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddAuthorization(options =>
 {
 	options.AddPolicy("Author", policy => policy.Requirements.Add(new RoleRequirements("author")));
+
+	options.AddPolicy("ViewProfile", policy =>
+	{
+		policy.RequireAssertion(context =>
+		{
+			var userIdClaim = context.User.Claims.FirstOrDefault(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+			if(userIdClaim == null)
+			{
+				return false;
+			}
+
+			var userIdRequest = new HttpContextAccessor().HttpContext.GetRouteValue("id").ToString();
+
+            return userIdClaim == userIdRequest;
+		});
+	});
+
+	options.AddPolicy("PostAuthorOnly", policy =>
+		policy.Requirements.Add(new SameAuthorRequirement()));
 });
 
 var app = builder.Build();
@@ -83,6 +111,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
