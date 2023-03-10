@@ -4,32 +4,35 @@ using Microsoft.Extensions.Options;
 
 namespace Api.Policy.PermissionPolicy
 {
-	public class PermissionPolicyProvider : IAuthorizationPolicyProvider
+	public class PermissionPolicyProvider : DefaultAuthorizationPolicyProvider
 	{
 		const string POLICY_PREFIX = "PermissionAuthorize";
 
 		public DefaultAuthorizationPolicyProvider FallbackPolicyProvider { get; }
 
-		public PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
+		public PermissionPolicyProvider(IOptions<AuthorizationOptions> options) : base(options)
 		{
-			FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
 		}
 
-		public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => Task.FromResult(
-				new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
-					.RequireAuthenticatedUser().Build());
+		public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => FallbackPolicyProvider.GetDefaultPolicyAsync();
 
-		public Task<AuthorizationPolicy> GetFallbackPolicyAsync() => Task.FromResult<AuthorizationPolicy?>(null);
+		public Task<AuthorizationPolicy> GetFallbackPolicyAsync() => FallbackPolicyProvider.GetFallbackPolicyAsync();
 
-		public Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
+		public override async Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
 		{
+			var policy = await base.GetPolicyAsync(policyName);
+
+			if (policy != null) return policy;
+
 			if (policyName.StartsWith(POLICY_PREFIX, StringComparison.OrdinalIgnoreCase))
 			{
-				var policy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme);
-				policy.AddRequirements(new PermissionAuthorizeRequirement(policyName.Substring(POLICY_PREFIX.Length)));
-				return Task.FromResult(policy.Build());
+				var permission = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme);
+
+				permission.AddRequirements(new PermissionAuthorizeRequirement(policyName.Substring(POLICY_PREFIX.Length)));
+
+				return permission.Build();
 			}
-			return Task.FromResult<AuthorizationPolicy?>(null);
+			return null;
 		}
 	}
 }

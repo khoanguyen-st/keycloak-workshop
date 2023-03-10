@@ -1,5 +1,7 @@
 ﻿using Api.DTOs;
+using Api.Policy.PermissionPolicy;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -19,6 +21,7 @@ namespace Api.Controllers
 
 		//Get all role of a client in keycloak
 		[HttpGet()]
+		[PermissionAuthorize("view-role")]
 		public async Task<IActionResult> GetRole()
 		{
 			var token = HttpContext.GetTokenAsync("access_token").Result;
@@ -36,6 +39,7 @@ namespace Api.Controllers
 		}
 
 		[HttpPost()]
+		[PermissionAuthorize("create-role")]
 		public async Task<IActionResult> CreateRole(AddRoleDTO addRoleDTO)
 		{
 			var token = HttpContext.GetTokenAsync("access_token").Result;
@@ -58,6 +62,7 @@ namespace Api.Controllers
 
 		//Create a method to Add client-level roles to the user role mapping keycloak
 		[HttpPost("Mapping")]
+		[PermissionAuthorize("map-role")]
 		public async Task<IActionResult> CreateRoleMapping(MapRoleDTO listRole)
 		{
 			var token = HttpContext.GetTokenAsync("access_token").Result;

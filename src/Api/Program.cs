@@ -1,8 +1,10 @@
 using Api.Context;
 using Api.Policy;
+using Api.Policy.AgePolicy;
 using Api.Policy.PermissionPolicy;
 using Api.Policy.ResourcePolicy;
 using Api.Policy.RolePolicy;
+using Api.Policy.SexPolicy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Logging;
@@ -68,7 +70,9 @@ builder.Services.AddAuthentication("Bearer")
 	});
 
 builder.Services.AddSingleton<IAuthorizationHandler, RoleHandler>();
-builder.Services.AddSingleton<IAuthorizationHandler, PostResourceHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, AgeHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, SexHandler>();
+builder.Services.AddSingleton<IAuthorizationHandler, ResourceHandler>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizeHandler>();
 
@@ -76,7 +80,11 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddAuthorization(options =>
 {
-	options.AddPolicy("Author", policy => policy.Requirements.Add(new RoleRequirements("author")));
+	options.AddPolicy("Admin", policy => policy.Requirements.Add(new RoleRequirements("admin")));
+
+	options.AddPolicy("AdultOnly", policy => policy.Requirements.Add(new AgeRequirement(18)));
+
+	options.AddPolicy("FemaleOnly", policy => policy.Requirements.Add(new SexRequirement("Female")));
 
 	options.AddPolicy("ViewProfile", policy =>
 	{
@@ -86,10 +94,11 @@ builder.Services.AddAuthorization(options =>
 
 			if(userIdClaim == null)
 			{
+				Console.WriteLine("here");
 				return false;
 			}
 
-			var userIdRequest = new HttpContextAccessor().HttpContext.GetRouteValue("id").ToString();
+            var userIdRequest = new HttpContextAccessor().HttpContext.GetRouteValue("id").ToString();
 
             return userIdClaim == userIdRequest;
 		});

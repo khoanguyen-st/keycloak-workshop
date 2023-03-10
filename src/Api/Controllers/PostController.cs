@@ -29,6 +29,29 @@ namespace Api.Controllers
 			return Ok(await _context.Post.Include(p => p.Comments).ToListAsync());
 		}
 
+		[HttpGet("AdultOnly")]
+		[Authorize(Policy = "AdultOnly")]
+		public async Task<IActionResult> GetAdultOnly()
+		{
+			var posts = await _context.Post.Include(p => p.Comments).ToListAsync();
+
+			var adultOnlyPosts = posts.Where(p => p.Type == "Adult Only");
+
+			return Ok(adultOnlyPosts);
+		}
+
+		[HttpGet("FemaleOnly")]
+		[Authorize(Policy = "FemaleOnly")]
+		public async Task<IActionResult> GetFemaleOnly()
+		{
+			var posts = await _context.Post.Include(p => p.Comments).ToListAsync();
+
+			var femaleOnlyPosts = posts.Where(p => p.Type == "Female Only");
+
+			return Ok(femaleOnlyPosts);
+		}
+
+
 		[Authorize]
 		[HttpPost]
 		public async Task<IActionResult> Post(AddPostDTO addPost)

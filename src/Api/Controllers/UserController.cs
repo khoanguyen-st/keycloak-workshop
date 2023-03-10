@@ -37,12 +37,14 @@ namespace Api.Controllers
 
 			var responseResult = await client.GetAsync($"{rootPath}/admin/realms/{realm}/users");
 
+			var result = await responseResult.Content.ReadAsStringAsync();
+
 			if (!responseResult.IsSuccessStatusCode)
 			{
-				return BadRequest(await responseResult.Content.ReadAsStringAsync());
+				return BadRequest(result);
 			}
 
-			return Ok(await responseResult.Content.ReadAsStringAsync());
+			return Ok(result);
 		}
 
 		//Get user keycloak by id
@@ -56,16 +58,20 @@ namespace Api.Controllers
 
 			var responseResult = await client.GetAsync($"{rootPath}/admin/realms/{realm}/users/{id}");
 
+			var result = await responseResult.Content.ReadAsStringAsync();
+
 			if (!responseResult.IsSuccessStatusCode)
 			{
-				return BadRequest(await responseResult.Content.ReadAsStringAsync());
+				return BadRequest(result);
 			}
 
-			return Ok(await responseResult.Content.ReadAsStringAsync());
+			var listUser = JsonConvert.DeserializeObject<GetProfileDTO>(result);
+
+			return Ok(result);
 		}
 
 		[HttpPost]
-		[PermissionAuthorize("create-user")]
+		[Authorize(Policy = "Admin")]
 		public async Task<IActionResult> Create(AddUserDTO addUserDTO)
 		{
 			try
@@ -80,14 +86,14 @@ namespace Api.Controllers
 					email = addUserDTO.Email,
 					enabled = true,
 					credentials = new List<object>
-				{
-					new
 					{
-						type = "password",
-						value = addUserDTO.Password,
-						temporary = false
+						new
+						{
+							type = "password",
+							value = addUserDTO.Password,
+							temporary = false
+						}
 					}
-				}
 				};
 
 				var json = JsonConvert.SerializeObject(userKeycloak);

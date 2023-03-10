@@ -5,7 +5,7 @@ using System.Reflection.Metadata;
 
 namespace Api.Policy.ResourcePolicy
 {
-	public class PostResourceHandler : AuthorizationHandler<SameAuthorRequirement, string>
+	public class ResourceHandler : AuthorizationHandler<SameAuthorRequirement, string>
 	{
 		protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SameAuthorRequirement requirement, string authorId)
 		{
